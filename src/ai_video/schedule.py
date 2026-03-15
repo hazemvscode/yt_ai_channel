@@ -5,7 +5,7 @@ import random
 from dataclasses import dataclass
 from datetime import datetime, time
 from pathlib import Path
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 @dataclass
@@ -62,7 +62,11 @@ def _generate_times(cfg: ScheduleConfig, date_str: str) -> list[str]:
 
 
 def should_run(cfg: ScheduleConfig) -> bool:
-    tz = ZoneInfo(cfg.timezone)
+    try:
+        tz = ZoneInfo(cfg.timezone)
+    except ZoneInfoNotFoundError:
+        tz = ZoneInfo("UTC")
+
     now = datetime.now(tz)
     date_str = now.strftime("%Y-%m-%d")
 
