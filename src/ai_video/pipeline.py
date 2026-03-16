@@ -28,6 +28,17 @@ def run_pipeline(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     storyboard = generate_storyboard(cfg, topic, duration_sec, language)
+
+    # Mark as Shorts for YouTube discovery
+    title = storyboard.get("title", "").strip()
+    desc = storyboard.get("description", "").strip()
+    if "#shorts" not in title.lower():
+        title = (title + " #Shorts").strip()
+    if "#shorts" not in desc.lower():
+        desc = (desc + "\n\n#Shorts").strip()
+    storyboard["title"] = title
+    storyboard["description"] = desc
+
     (out_dir / "storyboard.json").write_text(
         json.dumps(storyboard, ensure_ascii=False, indent=2), encoding="utf-8"
     )
