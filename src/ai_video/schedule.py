@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import random
@@ -42,6 +42,12 @@ def _generate_times(cfg: ScheduleConfig, date_str: str) -> list[str]:
     end = _time_to_minutes(cfg.window_end)
     if end <= start:
         end = start + 1
+
+    window = end - start
+    required = cfg.min_gap_minutes * max(0, cfg.daily_target - 1)
+    if cfg.min_gap_minutes > 0 and required <= window:
+        times = [start + i * cfg.min_gap_minutes for i in range(cfg.daily_target)]
+        return [_minutes_to_hhmm(m) for m in times]
 
     times: list[int] = []
     attempts = 0

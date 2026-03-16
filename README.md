@@ -61,3 +61,60 @@ python main.py --topic "..." --upload --privacy private
 - ?? ??????? YouTube: ??? `client_secrets.json` ?? ??? ??????? ????? ????? ?? `.env`.
 - ??? ??? ????? ?????? OAuth ? ????? ?????? ?? ????? ??????.
 - ????? ????? ?????? OpenAI Images API ???? ?????. ?? ???? Leonardo? ???? ????? ??????.
+
+## Railway Deploy (No Home Wi-Fi Uploads)
+
+This runs the pipeline on Railway so uploads use Railway's internet, not your home connection.
+
+### 1) Prepare YouTube token locally (one time)
+```
+python youtube_auth.py
+```
+This creates `yt_token.json` locally.
+
+### 2) Push code to GitHub
+```
+git add .
+git commit -m "railway deploy"
+git push origin main
+```
+
+### 3) Create Railway project
+- Connect your GitHub repo
+- Set **Deploy** to use `Dockerfile`
+
+### 4) Add required Railway Variables
+- `GROQ_API_KEY`
+- `GROQ_TEXT_MODEL` (e.g. `llama-3.1-8b-instant`)
+- `ELEVENLABS_API_KEY`
+- `ELEVENLABS_VOICE_ID`
+- `TOPIC_THEMES`
+- `DURATION` (e.g. `60`)
+- `PRIVACY` (`public`)
+- `SCHEDULE_DAILY_TARGET` (`5`)
+- `SCHEDULE_MIN_GAP_HOURS` (`4.8`)
+- `SCHEDULE_WINDOW_START` (`00:00`)
+- `SCHEDULE_WINDOW_END` (`23:59`)
+- `SCHEDULE_TIMEZONE` (`Africa/Cairo`)
+
+### 5) Provide YouTube token on Railway
+Add this variable (paste the full JSON content):
+- `YOUTUBE_TOKEN_JSON` = contents of `yt_token.json`
+
+Optional (for long-term refresh safety):
+- `YOUTUBE_CLIENT_SECRETS_JSON` = contents of your Google OAuth client secrets JSON
+
+### 6) Provide images
+Option A (recommended): host a zip of your images and set:
+- `IMAGES_ZIP_URL` = direct download link to a zip file
+
+Option B: mount a Railway volume at `/data` and upload images into `/data/images`.
+Then set:
+- `IMAGES_DIR=/data/images`
+
+### 7) Deploy
+Railway will run:
+```
+bash ./start.sh
+```
+This loops forever and uploads 5 Shorts per day.

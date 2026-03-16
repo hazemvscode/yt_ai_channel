@@ -1,8 +1,9 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import os
 import sys
+import time as time_module
 from datetime import time
 from pathlib import Path
 
@@ -24,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--duration", type=int, default=120, help="Target duration in seconds")
     parser.add_argument("--language", default="en", help="Narration language")
     parser.add_argument("--out-dir", default="outputs", help="Output directory")
-    parser.add_argument("--tts", choices=["openai", "elevenlabs"], default="openai")
+    parser.add_argument("--tts", choices=["openai", "elevenlabs"], default="elevenlabs")
     parser.add_argument("--skip-tts", action="store_true")
     parser.add_argument("--skip-images", action="store_true")
     parser.add_argument("--skip-video", action="store_true")
@@ -32,28 +33,33 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--upload", action="store_true", help="Upload to YouTube")
     parser.add_argument("--privacy", default="private", help="YouTube privacy status")
     parser.add_argument("--schedule", action="store_true", help="Enable random schedule gate")
+    parser.add_argument("--loop", action="store_true", help="Run forever, checking schedule")
+    parser.add_argument("--loop-sleep", type=int, default=300, help="Seconds to sleep between checks")
     return parser
 
 
-def main() -> None:
-    args = build_parser().parse_args()
+def _build_schedule(args) -> ScheduleConfig:
+    tz = os.getenv("SCHEDULE_TIMEZONE", "Africa/Cairo")
+    window_start = os.getenv("SCHEDULE_WINDOW_START", "00:00")
+    window_end = os.getenv("SCHEDULE_WINDOW_END", "23:59")
+    daily_target = int(os.getenv("SCHEDULE_DAILY_TARGET", "5"))
+    min_gap_hours = float(os.getenv("SCHEDULE_MIN_GAP_HOURS", "4.8"))
+
+    return ScheduleConfig(
+        timezone=tz,
+        window_start=time.fromisoformat(window_start),
+        window_end=time.fromisoformat(window_end),
+        daily_target=daily_target,
+        min_gap_minutes=int(round(min_gap_hours * 60)),
+        state_path=Path(args.out_dir) / "schedule_state.json",
+    )
+
+
+def _run_once(args) -> None:
     cfg = get_config()
 
     if args.schedule:
-        tz = os.getenv("SCHEDULE_TIMEZONE", "Africa/Cairo")
-        window_start = os.getenv("SCHEDULE_WINDOW_START", "09:00")
-        window_end = os.getenv("SCHEDULE_WINDOW_END", "23:00")
-        daily_target = int(os.getenv("SCHEDULE_DAILY_TARGET", "3"))
-        min_gap_hours = int(os.getenv("SCHEDULE_MIN_GAP_HOURS", "4"))
-
-        sched = ScheduleConfig(
-            timezone=tz,
-            window_start=time.fromisoformat(window_start),
-            window_end=time.fromisoformat(window_end),
-            daily_target=daily_target,
-            min_gap_minutes=min_gap_hours * 60,
-            state_path=Path(args.out_dir) / "schedule_state.json",
-        )
+        sched = _build_schedule(args)
         if not should_run(sched):
             return
 
@@ -81,6 +87,21 @@ def main() -> None:
         upload=args.upload,
         privacy_status=args.privacy,
     )
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+
+    if args.loop:
+        while True:
+            try:
+                _run_once(args)
+            except Exception as exc:
+                print(f"[loop] error: {exc}")
+            time_module.sleep(args.loop_sleep)
+        return
+
+    _run_once(args)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import re
 from typing import Any
 
-from anthropic import Anthropic
+from groq import Groq
 from openai import OpenAI
 
 from .config import Config
@@ -27,11 +27,11 @@ You are a YouTube scriptwriter and director.
 Create a complete short video plan.
 Return ONLY valid JSON with this schema:
 {{
-  "title": string,
-  "description": string,
-  "tags": [string, ...],
-  "scenes": [
-    {{"narration": string, "image_prompt": string}}
+  \"title\": string,
+  \"description\": string,
+  \"tags\": [string, ...],
+  \"scenes\": [
+    {{\"narration\": string, \"image_prompt\": string}}
   ]
 }}
 
@@ -47,31 +47,26 @@ Topic: {topic}
 """.strip()
 
 
-def _extract_anthropic_text(response) -> str:
-    parts = []
-    for block in response.content:
-        if getattr(block, "type", None) == "text":
-            parts.append(block.text)
-    return "".join(parts).strip()
+def _extract_groq_text(response) -> str:
+    return response.choices[0].message.content.strip()
 
 
-def _generate_storyboard_anthropic(
+def _generate_storyboard_groq(
     cfg: Config,
     topic: str,
     duration_sec: int,
     language: str,
 ) -> dict[str, Any]:
-    if not cfg.anthropic_api_key:
-        raise ValueError("ANTHROPIC_API_KEY is missing.")
+    if not cfg.groq_api_key:
+        raise ValueError("GROQ_API_KEY is missing.")
 
-    client = Anthropic(api_key=cfg.anthropic_api_key)
+    client = Groq(api_key=cfg.groq_api_key)
     prompt = _build_prompt(topic, duration_sec, language)
-    response = client.messages.create(
-        model=cfg.anthropic_model,
-        max_tokens=1200,
+    response = client.chat.completions.create(
+        model=cfg.groq_text_model,
         messages=[{"role": "user", "content": prompt}],
     )
-    data = _extract_json(_extract_anthropic_text(response))
+    data = _extract_json(_extract_groq_text(response))
     if "scenes" not in data or not isinstance(data["scenes"], list):
         raise ValueError("Invalid storyboard JSON: missing scenes list")
     return data
@@ -106,16 +101,16 @@ def generate_storyboard(
     duration_sec: int,
     language: str,
 ) -> dict[str, Any]:
-    if cfg.anthropic_api_key:
-        return _generate_storyboard_anthropic(cfg, topic, duration_sec, language)
+    if cfg.groq_api_key:
+        return _generate_storyboard_groq(cfg, topic, duration_sec, language)
     return _generate_storyboard_openai(cfg, topic, duration_sec, language)
 
 
 def generate_topic(cfg: Config, themes: str, language: str) -> str:
-    if not cfg.anthropic_api_key:
-        raise ValueError("ANTHROPIC_API_KEY is missing for topic generation.")
+    if not cfg.groq_api_key:
+        raise ValueError("GROQ_API_KEY is missing for topic generation.")
 
-    client = Anthropic(api_key=cfg.anthropic_api_key)
+    client = Groq(api_key=cfg.groq_api_key)
     prompt = (
         "Generate ONE unique YouTube video topic title.\n"
         f"Themes (pick one or blend): {themes}\n"
@@ -125,9 +120,8 @@ def generate_topic(cfg: Config, themes: str, language: str) -> str:
         "- No quotes, no markdown, no bullet points.\n"
         "- Make it specific and engaging.\n"
     )
-    response = client.messages.create(
-        model=cfg.anthropic_model,
-        max_tokens=80,
+    response = client.chat.completions.create(
+        model=cfg.groq_text_model,
         messages=[{"role": "user", "content": prompt}],
     )
-    return _extract_anthropic_text(response).strip()
+    return _extract_groq_text(response).strip()

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -11,6 +11,15 @@ def load_env() -> None:
     load_dotenv(dotenv_path=project_root / ".env")
 
 
+def _clean_model_id(value: str, default: str) -> str:
+    v = (value or "").strip()
+    if not v:
+        return default
+    if "=" in v:
+        v = v.split("=")[-1].strip()
+    return v
+
+
 @dataclass
 class Config:
     openai_api_key: str
@@ -18,8 +27,11 @@ class Config:
     openai_image_model: str
     openai_tts_model: str
     openai_tts_voice: str
-    anthropic_api_key: str | None
-    anthropic_model: str
+    groq_api_key: str | None
+    groq_text_model: str
+    hf_api_key: str | None
+    hf_image_model: str | None
+    hf_provider: str
     elevenlabs_api_key: str | None
     elevenlabs_voice_id: str | None
     youtube_client_secrets_file: str | None
@@ -28,14 +40,19 @@ class Config:
 
 def get_config() -> Config:
     load_env()
+    groq_model_default = "llama-3.3-70b-versatile"
+    groq_model = _clean_model_id(os.getenv("GROQ_TEXT_MODEL", ""), groq_model_default)
     return Config(
         openai_api_key=os.getenv("OPENAI_API_KEY", "").strip(),
         openai_text_model=os.getenv("OPENAI_TEXT_MODEL", "gpt-4.1").strip(),
         openai_image_model=os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1").strip(),
         openai_tts_model=os.getenv("OPENAI_TTS_MODEL", "gpt-4o-mini-tts").strip(),
         openai_tts_voice=os.getenv("OPENAI_TTS_VOICE", "alloy").strip(),
-        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", "").strip() or None,
-        anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219").strip(),
+        groq_api_key=os.getenv("GROQ_API_KEY", "").strip() or None,
+        groq_text_model=groq_model,
+        hf_api_key=os.getenv("HF_API_KEY", "").strip() or None,
+        hf_image_model=os.getenv("HF_IMAGE_MODEL", "").strip() or None,
+        hf_provider=os.getenv("HF_PROVIDER", "hf-inference").strip() or "hf-inference",
         elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", "").strip() or None,
         elevenlabs_voice_id=os.getenv("ELEVENLABS_VOICE_ID", "").strip() or None,
         youtube_client_secrets_file=os.getenv("YOUTUBE_CLIENT_SECRETS_FILE", "").strip() or None,
