@@ -12,6 +12,11 @@ __pycache__/
 outputs/
 *.mp3
 *.mp4
-*.png
-*.jpg
-*.jpeg
+# *.png (kept in repo only under my_images/)
+# *.jpg (kept in repo only under my_images/)
+# *.jpeg (kept in repo only under my_images/)
+
+# Allow repo-scoped images folder
+!my_images/
+!my_images/**
+
