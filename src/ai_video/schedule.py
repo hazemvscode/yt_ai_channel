@@ -67,7 +67,7 @@ def _generate_times(cfg: ScheduleConfig, date_str: str) -> list[str]:
     return [_minutes_to_hhmm(m) for m in times]
 
 
-def should_run(cfg: ScheduleConfig) -> bool:
+def _ensure_state(cfg: ScheduleConfig) -> dict:
     try:
         tz = ZoneInfo(cfg.timezone)
     except ZoneInfoNotFoundError:
@@ -82,6 +82,18 @@ def should_run(cfg: ScheduleConfig) -> bool:
         state = {"date": date_str, "times": times, "executed": []}
         _save_state(cfg.state_path, state)
 
+    return state
+
+
+def should_run(cfg: ScheduleConfig) -> bool:
+    try:
+        tz = ZoneInfo(cfg.timezone)
+    except ZoneInfoNotFoundError:
+        tz = ZoneInfo("UTC")
+
+    now = datetime.now(tz)
+    state = _ensure_state(cfg)
+
     now_hhmm = now.strftime("%H:%M")
     pending = [t for t in state["times"] if t <= now_hhmm and t not in state["executed"]]
     if not pending:
@@ -90,3 +102,20 @@ def should_run(cfg: ScheduleConfig) -> bool:
     state["executed"].append(pending[-1])
     _save_state(cfg.state_path, state)
     return True
+
+
+def get_next_run_time(cfg: ScheduleConfig) -> str | None:
+    try:
+        tz = ZoneInfo(cfg.timezone)
+    except ZoneInfoNotFoundError:
+        tz = ZoneInfo("UTC")
+
+    now = datetime.now(tz)
+    state = _ensure_state(cfg)
+
+    now_hhmm = now.strftime("%H:%M")
+    remaining = [t for t in state["times"] if t > now_hhmm and t not in state["executed"]]
+    if remaining:
+        return f"{state['date']} {remaining[0]} ({cfg.timezone})"
+
+    return None

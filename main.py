@@ -15,7 +15,7 @@ if str(SRC_PATH) not in sys.path:
 from ai_video.config import get_config
 from ai_video.llm import generate_topic
 from ai_video.pipeline import run_pipeline
-from ai_video.schedule import ScheduleConfig, should_run
+from ai_video.schedule import ScheduleConfig, should_run, get_next_run_time
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,6 +60,9 @@ def _run_once(args) -> None:
 
     if args.schedule:
         sched = _build_schedule(args)
+        next_run = get_next_run_time(sched)
+        if next_run:
+            print(f"[next-run] {next_run}")
         if not should_run(sched):
             return
 
