@@ -15,6 +15,13 @@ def _debug_elevenlabs(cfg: Config) -> None:
         key = cfg.elevenlabs_api_key or ""
         tail = key[-4:] if len(key) >= 4 else key
         print(f"[elevenlabs] key_len={len(key)} key_tail={tail} voice_id={cfg.elevenlabs_voice_id}")
+        try:
+            r = requests.get("https://api.elevenlabs.io/v1/voices", headers={"xi-api-key": key}, timeout=20)
+            print(f"[elevenlabs] voices_status={r.status_code}")
+            if r.status_code != 200:
+                print(f"[elevenlabs] voices_error={r.text[:200]}")
+        except Exception as exc:
+            print(f"[elevenlabs] voices_check_error={exc}")
 
 
 def generate_audio_openai(cfg: Config, text: str, out_path: Path) -> None:
