@@ -81,16 +81,32 @@ def generate_audio_elevenlabs(cfg: Config, text: str, out_path: Path) -> None:
     out_path.write_bytes(response.content)
 
 
+def generate_audio_hf(cfg: Config, text: str, out_path: Path) -> None:
+    if not cfg.hf_api_key:
+        raise ValueError("HF_API_KEY is required for Hugging Face TTS")
+
+    model = os.getenv("HF_TTS_MODEL", "facebook/mms-tts-eng")
+    url = f"https://api-inference.huggingface.co/models/{model}"
+    headers = {"Authorization": f"Bearer {cfg.hf_api_key}"}
+    payload = {"inputs": text}
+
+    response = requests.post(url, headers=headers, json=payload, timeout=180)
+    response.raise_for_status()
+    out_path.write_bytes(response.content)
+
+
 def generate_audio(
     cfg: Config,
     text: str,
     out_path: Path,
-    provider: Literal["openai", "elevenlabs"],
+    provider: Literal["openai", "elevenlabs", "hf"],
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if provider == "openai":
         generate_audio_openai(cfg, text, out_path)
     elif provider == "elevenlabs":
         generate_audio_elevenlabs(cfg, text, out_path)
+    elif provider == "hf":
+        generate_audio_hf(cfg, text, out_path)
     else:
         raise ValueError(f"Unknown TTS provider: {provider}")
