@@ -6,8 +6,8 @@ OUT_DIR=${OUT_DIR:-/data/outputs}
 TOPIC_THEMES=${TOPIC_THEMES:-"space,science,history,technology,curiosity"}
 DURATION=${DURATION:-60}
 PRIVACY=${PRIVACY:-public}
-TTS=${TTS:-hf}
-HF_TTS_MODEL=${HF_TTS_MODEL:-facebook/mms-tts-eng}
+TTS=${TTS:-edge}
+HF_TTS_MODEL=${HF_TTS_MODEL:-facebook/mms-tts-eng}\nEDGE_TTS_VOICE=${EDGE_TTS_VOICE:-en-US-GuyNeural}\nEDGE_TTS_RATE=${EDGE_TTS_RATE:-+0%}\nEDGE_TTS_PITCH=${EDGE_TTS_PITCH:-+0Hz}
 
 YOUTUBE_TOKEN_FILE=${YOUTUBE_TOKEN_FILE:-/data/yt_token.json}
 YOUTUBE_CLIENT_SECRETS_FILE=${YOUTUBE_CLIENT_SECRETS_FILE:-/data/client_secrets.json}
@@ -46,3 +46,4 @@ cmd=(python main.py \
   --out-dir "${OUT_DIR}")
 
 exec "${cmd[@]}"
+

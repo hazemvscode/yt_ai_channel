@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from pathlib import Path
 from typing import Literal
 
 import requests
+import edge_tts
 
 from .config import Config
 
@@ -28,6 +30,19 @@ def _check_voices(cfg: Config) -> None:
             print(f"[elevenlabs] voices_error={r.text[:200]}")
     except Exception as exc:
         print(f"[elevenlabs] voices_check_error={exc}")
+
+
+def _run_async(coro) -> None:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(coro)
+        return
+    new_loop = asyncio.new_event_loop()
+    try:
+        new_loop.run_until_complete(coro)
+    finally:
+        new_loop.close()
 
 
 def generate_audio_openai(cfg: Config, text: str, out_path: Path) -> None:
@@ -95,11 +110,23 @@ def generate_audio_hf(cfg: Config, text: str, out_path: Path) -> None:
     out_path.write_bytes(response.content)
 
 
+def generate_audio_edge(cfg: Config, text: str, out_path: Path) -> None:
+    voice = os.getenv("EDGE_TTS_VOICE", "en-US-GuyNeural")
+    rate = os.getenv("EDGE_TTS_RATE", "+0%")
+    pitch = os.getenv("EDGE_TTS_PITCH", "+0Hz")
+
+    async def _run() -> None:
+        communicate = edge_tts.Communicate(text, voice=voice, rate=rate, pitch=pitch)
+        await communicate.save(str(out_path))
+
+    _run_async(_run())
+
+
 def generate_audio(
     cfg: Config,
     text: str,
     out_path: Path,
-    provider: Literal["openai", "elevenlabs", "hf"],
+    provider: Literal["openai", "elevenlabs", "hf", "edge"],
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if provider == "openai":
@@ -108,5 +135,7 @@ def generate_audio(
         generate_audio_elevenlabs(cfg, text, out_path)
     elif provider == "hf":
         generate_audio_hf(cfg, text, out_path)
+    elif provider == "edge":
+        generate_audio_edge(cfg, text, out_path)
     else:
         raise ValueError(f"Unknown TTS provider: {provider}")

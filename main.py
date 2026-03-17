@@ -25,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--duration", type=int, default=120, help="Target duration in seconds")
     parser.add_argument("--language", default="en", help="Narration language")
     parser.add_argument("--out-dir", default="outputs", help="Output directory")
-    parser.add_argument("--tts", choices=["openai", "elevenlabs", "hf"], default="elevenlabs")
+    parser.add_argument("--tts", choices=["openai", "elevenlabs", "hf", "edge"], default="elevenlabs")
     parser.add_argument("--skip-tts", action="store_true")
     parser.add_argument("--skip-images", action="store_true")
     parser.add_argument("--skip-video", action="store_true")
@@ -109,3 +109,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
