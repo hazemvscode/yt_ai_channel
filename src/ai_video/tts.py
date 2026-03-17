@@ -1,12 +1,19 @@
 from __future__ import annotations
 
-import json
+import json\nimport os
 from pathlib import Path
 from typing import Literal
 
 import requests
 
 from .config import Config
+
+
+def _debug_elevenlabs(cfg: Config) -> None:
+    if (os.getenv("DEBUG_EL", "").strip().lower() in {"1", "true", "yes"}):
+        key = cfg.elevenlabs_api_key or ""
+        tail = key[-4:] if len(key) >= 4 else key
+        print(f"[elevenlabs] key_len={len(key)} key_tail={tail} voice_id={cfg.elevenlabs_voice_id}")
 
 
 def generate_audio_openai(cfg: Config, text: str, out_path: Path) -> None:
@@ -33,6 +40,8 @@ def generate_audio_openai(cfg: Config, text: str, out_path: Path) -> None:
 def generate_audio_elevenlabs(cfg: Config, text: str, out_path: Path) -> None:
     if not cfg.elevenlabs_api_key or not cfg.elevenlabs_voice_id:
         raise ValueError("ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID are required")
+
+    _debug_elevenlabs(cfg)
 
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{cfg.elevenlabs_voice_id}"
     headers = {
@@ -66,3 +75,4 @@ def generate_audio(
         generate_audio_elevenlabs(cfg, text, out_path)
     else:
         raise ValueError(f"Unknown TTS provider: {provider}")
+
