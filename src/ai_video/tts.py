@@ -10,18 +10,24 @@ import requests
 from .config import Config
 
 
-def _debug_elevenlabs(cfg: Config) -> None:
-    if (os.getenv("DEBUG_EL", "").strip().lower() in {"1", "true", "yes"}):
-        key = cfg.elevenlabs_api_key or ""
-        tail = key[-4:] if len(key) >= 4 else key
-        print(f"[elevenlabs] key_len={len(key)} key_tail={tail} voice_id={cfg.elevenlabs_voice_id}")
-        try:
-            r = requests.get("https://api.elevenlabs.io/v1/voices", headers={"xi-api-key": key}, timeout=20)
-            print(f"[elevenlabs] voices_status={r.status_code}")
-            if r.status_code != 200:
-                print(f"[elevenlabs] voices_error={r.text[:200]}")
-        except Exception as exc:
-            print(f"[elevenlabs] voices_check_error={exc}")
+def _debug_elevenlabs(cfg: Config) -> bool:
+    return os.getenv("DEBUG_EL", "").strip().lower() in {"1", "true", "yes"}
+
+
+def _print_elevenlabs_key(cfg: Config) -> None:
+    key = cfg.elevenlabs_api_key or ""
+    tail = key[-4:] if len(key) >= 4 else key
+    print(f"[elevenlabs] key_len={len(key)} key_tail={tail} voice_id={cfg.elevenlabs_voice_id}")
+
+
+def _check_voices(cfg: Config) -> None:
+    try:
+        r = requests.get("https://api.elevenlabs.io/v1/voices", headers={"xi-api-key": cfg.elevenlabs_api_key}, timeout=20)
+        print(f"[elevenlabs] voices_status={r.status_code}")
+        if r.status_code != 200:
+            print(f"[elevenlabs] voices_error={r.text[:200]}")
+    except Exception as exc:
+        print(f"[elevenlabs] voices_check_error={exc}")
 
 
 def generate_audio_openai(cfg: Config, text: str, out_path: Path) -> None:
@@ -49,7 +55,9 @@ def generate_audio_elevenlabs(cfg: Config, text: str, out_path: Path) -> None:
     if not cfg.elevenlabs_api_key or not cfg.elevenlabs_voice_id:
         raise ValueError("ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID are required")
 
-    _debug_elevenlabs(cfg)
+    if _debug_elevenlabs(cfg):
+        _print_elevenlabs_key(cfg)
+        _check_voices(cfg)
 
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{cfg.elevenlabs_voice_id}"
     headers = {
@@ -66,6 +74,9 @@ def generate_audio_elevenlabs(cfg: Config, text: str, out_path: Path) -> None:
     }
 
     response = requests.post(url, headers=headers, json=payload, timeout=120)
+    if _debug_elevenlabs(cfg) and response.status_code != 200:
+        print(f"[elevenlabs] tts_status={response.status_code}")
+        print(f"[elevenlabs] tts_error={response.text[:300]}")
     response.raise_for_status()
     out_path.write_bytes(response.content)
 
