@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Literal
 
 import requests
-import edge_tts
 
 from .config import Config
 
@@ -110,7 +111,19 @@ def generate_audio_hf(cfg: Config, text: str, out_path: Path) -> None:
     out_path.write_bytes(response.content)
 
 
+def _ensure_edge_tts() -> None:
+    try:
+        import edge_tts  # noqa: F401
+        return
+    except Exception:
+        print("[edge-tts] installing edge-tts...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "edge-tts"])
+
+
 def generate_audio_edge(cfg: Config, text: str, out_path: Path) -> None:
+    _ensure_edge_tts()
+    import edge_tts
+
     voice = os.getenv("EDGE_TTS_VOICE", "en-US-GuyNeural")
     rate = os.getenv("EDGE_TTS_RATE", "+0%")
     pitch = os.getenv("EDGE_TTS_PITCH", "+0Hz")
