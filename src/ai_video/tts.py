@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import json\nimport os
+import json
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -75,4 +76,3 @@ def generate_audio(
         generate_audio_elevenlabs(cfg, text, out_path)
     else:
         raise ValueError(f"Unknown TTS provider: {provider}")
-
