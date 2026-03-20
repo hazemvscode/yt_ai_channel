@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from moviepy import AudioFileClip, ColorClip, ImageClip, concatenate_videoclips
@@ -43,5 +44,20 @@ def build_video(
     video = video.with_audio(audio)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    video.write_videofile(str(out_path), fps=fps)
 
+    preset = os.getenv("VIDEO_PRESET", "ultrafast")
+    bitrate = os.getenv("VIDEO_BITRATE", "2000k")
+    threads = int(os.getenv("VIDEO_THREADS", "2"))
+
+    video.write_videofile(
+        str(out_path),
+        fps=fps,
+        codec="libx264",
+        audio_codec="aac",
+        preset=preset,
+        bitrate=bitrate,
+        threads=threads,
+        ffmpeg_params=["-movflags", "+faststart"],
+    )
+    video.close()
+    audio.close()

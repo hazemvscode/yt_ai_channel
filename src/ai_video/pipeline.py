@@ -17,7 +17,7 @@ def run_pipeline(
     duration_sec: int,
     language: str,
     out_dir: Path,
-    tts_provider: Literal["openai", "elevenlabs"],
+    tts_provider: Literal["openai", "elevenlabs", "hf", "edge"],
     skip_tts: bool,
     skip_images: bool,
     skip_video: bool,
