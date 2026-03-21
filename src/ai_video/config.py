@@ -20,6 +20,15 @@ def _clean_model_id(value: str, default: str) -> str:
     return v
 
 
+def _pick_youtube_file_env(primary: str, fallback: str, json_env: str, default_path: str) -> str:
+    value = os.getenv(primary, "").strip()
+    if not value:
+        value = os.getenv(fallback, "").strip()
+    if not value and os.getenv(json_env, "").strip():
+        value = default_path
+    return value
+
+
 @dataclass
 class Config:
     openai_api_key: str
@@ -42,6 +51,20 @@ def get_config() -> Config:
     load_env()
     groq_model_default = "llama-3.3-70b-versatile"
     groq_model = _clean_model_id(os.getenv("GROQ_TEXT_MODEL", ""), groq_model_default)
+
+    youtube_client_secrets_file = _pick_youtube_file_env(
+        "YOUTUBE_CLIENT_SECRETS_FILE",
+        "YOUTUBE_CLIENT_SECRET_FILE",
+        "YOUTUBE_CLIENT_SECRETS_JSON",
+        "/data/client_secrets.json",
+    )
+    youtube_token_file = _pick_youtube_file_env(
+        "YOUTUBE_TOKEN_FILE",
+        "YOUTUBE_TOKENFILE",
+        "YOUTUBE_TOKEN_JSON",
+        "/data/yt_token.json",
+    )
+
     return Config(
         openai_api_key=os.getenv("OPENAI_API_KEY", "").strip(),
         openai_text_model=os.getenv("OPENAI_TEXT_MODEL", "gpt-4.1").strip(),
@@ -55,6 +78,6 @@ def get_config() -> Config:
         hf_provider=os.getenv("HF_PROVIDER", "hf-inference").strip() or "hf-inference",
         elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", "").strip() or None,
         elevenlabs_voice_id=os.getenv("ELEVENLABS_VOICE_ID", "").strip() or None,
-        youtube_client_secrets_file=os.getenv("YOUTUBE_CLIENT_SECRETS_FILE", "").strip() or None,
-        youtube_token_file=os.getenv("YOUTUBE_TOKEN_FILE", "").strip() or None,
+        youtube_client_secrets_file=youtube_client_secrets_file or None,
+        youtube_token_file=youtube_token_file or None,
     )
