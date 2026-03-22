@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 from dataclasses import dataclass
@@ -41,6 +41,10 @@ class Config:
     hf_api_key: str | None
     hf_image_model: str | None
     hf_provider: str
+    image_provider: str
+    es24_endpoint: str
+    es24_style: int
+    es24_ratio: str
     elevenlabs_api_key: str | None
     elevenlabs_voice_id: str | None
     youtube_client_secrets_file: str | None
@@ -76,6 +80,11 @@ def get_config() -> Config:
         hf_api_key=os.getenv("HF_API_KEY", "").strip() or None,
         hf_image_model=os.getenv("HF_IMAGE_MODEL", "").strip() or None,
         hf_provider=os.getenv("HF_PROVIDER", "hf-inference").strip() or "hf-inference",
+        image_provider=os.getenv("IMAGE_PROVIDER", "hf").strip().lower() or "hf",
+        es24_endpoint=os.getenv("ES24_ENDPOINT", "https://es24.in/art/dev_api.php").strip()
+        or "https://es24.in/art/dev_api.php",
+        es24_style=int(os.getenv("ES24_STYLE", "1").strip() or "1"),
+        es24_ratio=os.getenv("ES24_RATIO", "9:16").strip() or "9:16",
         elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", "").strip() or None,
         elevenlabs_voice_id=os.getenv("ELEVENLABS_VOICE_ID", "").strip() or None,
         youtube_client_secrets_file=youtube_client_secrets_file or None,

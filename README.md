@@ -118,3 +118,17 @@ Railway will run:
 bash ./start.sh
 ```
 This loops forever and uploads 5 Shorts per day.
+
+## Image Providers
+
+By default, images are generated with Hugging Face. You can switch to ES24 by setting:
+```
+IMAGE_PROVIDER=es24
+ES24_ENDPOINT=https://es24.in/art/dev_api.php
+ES24_STYLE=1
+ES24_RATIO=9:16
+```
+
+Notes:
+- ES24 does not require an API key.
+- If `IMAGE_PROVIDER=hf`, make sure `HF_API_KEY` is set.

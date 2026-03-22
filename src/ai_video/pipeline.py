@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Literal
 
 from .config import Config
-from .images import generate_images_hf
+from .images import generate_images_es24, generate_images_hf
 from .llm import generate_storyboard
 from .tts import generate_audio
 from .video import build_video
@@ -57,7 +57,12 @@ def run_pipeline(
 
     if not image_paths and not skip_images:
         prompts = [scene["image_prompt"] for scene in storyboard["scenes"]]
-        image_paths = generate_images_hf(cfg, prompts, out_dir / "images")
+        if cfg.image_provider == "es24":
+            image_paths = generate_images_es24(cfg, prompts, out_dir / "images")
+        elif cfg.image_provider == "hf":
+            image_paths = generate_images_hf(cfg, prompts, out_dir / "images")
+        else:
+            raise ValueError(f"Unknown IMAGE_PROVIDER: {cfg.image_provider}")
 
     video_path = out_dir / "final_video.mp4"
     if not skip_video:
